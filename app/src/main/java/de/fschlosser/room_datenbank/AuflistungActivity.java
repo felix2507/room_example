@@ -2,7 +2,6 @@ package de.fschlosser.room_datenbank;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,22 +20,32 @@ public class AuflistungActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auflistung);
 
+        dao = WordRoomDatabase.getDatabase(this).wordDao();
+
         recyclerView = findViewById(R.id.word_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new WordListAdapter();
+
+        adapter = new WordListAdapter(dao);
         recyclerView.setAdapter(adapter);
 
-        dao = WordRoomDatabase.getDatabase(this).wordDao();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        new LadeWordsTask().execute();
+        new LadeWordsTask(dao, adapter).execute();
     }
 
 
-    class LadeWordsTask extends AsyncTask<Void, Void, List<Word>>{
+    static class LadeWordsTask extends AsyncTask<Void, Void, List<Word>>{
+
+        private final WordDao dao;
+        private final WordListAdapter adapter;
+
+        public LadeWordsTask(WordDao dao, WordListAdapter adapter) {
+            this.dao = dao;
+            this.adapter = adapter;
+        }
 
         @Override
         protected List<Word> doInBackground(Void... voids) {

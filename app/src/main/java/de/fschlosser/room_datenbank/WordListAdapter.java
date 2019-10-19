@@ -1,5 +1,6 @@
 package de.fschlosser.room_datenbank;
 
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +21,10 @@ class WordViewHolder extends RecyclerView.ViewHolder {
 public class WordListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<Word> words = Collections.emptyList();
+    private final WordDao dao;
 
-    WordListAdapter() {
+    public WordListAdapter(WordDao dao) {
+        this.dao = dao;
     }
 
     @NonNull
@@ -39,6 +42,9 @@ public class WordListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             (@NonNull RecyclerView.ViewHolder holder, int position) {
         TextView wordView = holder.itemView.findViewById(R.id.list_item_word);
         wordView.setText(words.get(position).getWord());
+        wordView.setOnClickListener((view) -> {
+            new DeleteWordTask(dao, this).execute(words.get(position));
+        });
     }
 
     @Override
@@ -46,8 +52,33 @@ public class WordListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         return words.size();
     }
 
-    public void setWords(List<Word> words){
+    public void setWords(List<Word> words) {
         this.words = words;
         notifyDataSetChanged();
     }
+
+    static class DeleteWordTask extends AsyncTask<Word, Void, List<Word>> {
+
+        private final WordDao dao;
+        private final WordListAdapter adapter;
+
+        public DeleteWordTask(WordDao dao, WordListAdapter adapter) {
+            this.dao = dao;
+            this.adapter = adapter;
+        }
+
+        @Override
+        protected List<Word> doInBackground(Word... words) {
+            dao.delete(words[0]);
+            return dao.getAll();
+        }
+
+        @Override
+        protected void onPostExecute(List<Word> words) {
+            super.onPostExecute(words);
+            adapter.setWords(words);
+        }
+    }
+
+
 }
